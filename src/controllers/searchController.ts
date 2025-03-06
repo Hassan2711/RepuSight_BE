@@ -125,14 +125,14 @@ export const fetchAndAnalyzeTweets = async (req: Request, res: Response): Promis
     //   );
   
     //   res.json({ analyzedTweets });
-    
+
     const openaiResponse = await openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
           {
             role: 'system',
             content:
-              'You will be provided with a collection of tweets. Your task is to classify the overall sentiment as positive, neutral, or negative. Rate the sentiment on a scale of 1 to 5 stars, with 5 being the most positive and 1 being the most negative. Additionally, provide a collective explanation of the sentiment expressed in the tweets and highlight the reasons that contribute to the overall sentiment.',
+             'You will be provided with a collection of tweets. Your task is to classify the overall sentiment as positive, neutral, or negative. Rate the sentiment on a scale of 1 to 5 stars, with 5 being the most positive and 1 being the most negative. Additionally, provide a collective explanation of the sentiment expressed in the tweets, highlight the reasons that contribute to the overall sentiment, and provide tips on improving the sentiment. Return the response as a JSON object with the following keys: "rating", "sentiment", "reasoning", and "tips_on_improving_sentiment".',
           },
           {
             role: 'user',
@@ -144,9 +144,16 @@ export const fetchAndAnalyzeTweets = async (req: Request, res: Response): Promis
         top_p: 1,
       });
   
-      const collectiveSentiment = openaiResponse.choices[0].message.content;
+      const jsonResponse = openaiResponse.choices[0].message.content;
+
+
+    if (typeof jsonResponse === 'string') {
+        const structuredAnalysis = JSON.parse(jsonResponse);
+        res.json(structuredAnalysis);
+    } else {
+        res.status(500).json({ message: 'Invalid response format from OpenAI API' });
+    }
   
-      res.json({ collectiveSentiment });
   
     } catch (error) {
       console.error('Error fetching data from external APIs:', error);
